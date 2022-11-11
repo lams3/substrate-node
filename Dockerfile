@@ -1,37 +1,23 @@
-# This is an example build stage for the node template. Here we create the binary in a temporary image.
+# syntax=docker/dockerfile:1
+FROM rust
 
-# This is a base image to build substrate nodes
-FROM docker.io/paritytech/ci-linux:production as builder
+RUN apt-get update
+RUN apt-get install --assume-yes git clang curl libssl-dev llvm libudev-dev make protobuf-compiler
+RUN export PATH="$PATH:$HOME/.local/bin"
 
-WORKDIR /node-template
+RUN rustup default stable
+RUN rustup update
+RUN rustup update nightly
+RUN rustup target add wasm32-unknown-unknown --toolchain nightly
+RUN rustup show
+RUN rustup +nightly show
+
+WORKDIR /substrate-node
 COPY . .
-RUN cargo build --locked --release
 
-# This is the 2nd stage: a very small image where we copy the binary."
-FROM docker.io/library/ubuntu:20.04
-LABEL description="Multistage Docker image for Substrate Node Template" \
-  image.type="builder" \
-  image.authors="you@email.com" \
-  image.vendor="Substrate Developer Hub" \
-  image.description="Multistage Docker image for Substrate Node Template" \
-  image.source="https://github.com/substrate-developer-hub/substrate-node-template" \
-  image.documentation="https://github.com/substrate-developer-hub/substrate-node-template"
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/home/substrate-node/target \
+    cargo build --release
 
-# Copy the node binary.
-COPY --from=builder /node-template/target/release/node-template /usr/local/bin
-
-RUN useradd -m -u 1000 -U -s /bin/sh -d /node-dev node-dev && \
-  mkdir -p /chain-data /node-dev/.local/share && \
-  chown -R node-dev:node-dev /chain-data && \
-  ln -s /chain-data /node-dev/.local/share/node-template && \
-  # unclutter and minimize the attack surface
-  rm -rf /usr/bin /usr/sbin && \
-  # check if executable works in this container
-  /usr/local/bin/node-template --version
-
-USER node-dev
-
+CMD ["./target/release/node-template", "--dev", "--ws-external"]
 EXPOSE 30333 9933 9944 9615
-VOLUME ["/chain-data"]
-
-ENTRYPOINT ["/usr/local/bin/node-template"]
