@@ -147,6 +147,7 @@ fn testnet_genesis(
 		grandpa: GrandpaConfig {
 			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
 		},
+		treasury: Default::default(),
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: Some(root_key),
