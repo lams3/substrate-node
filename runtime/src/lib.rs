@@ -48,6 +48,9 @@ pub use sp_runtime::{Perbill, Permill};
 /// Import the template pallet.
 pub use pallet_template;
 
+/// Import the meme pallet.
+pub use pallet_memes;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -255,6 +258,26 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_memes::Config for Runtime {
+	type Currency = Balances;
+	type ReservationFee = ConstU128<100000000>;
+	type Slashed = ();
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MinLength = ConstU32<8>;
+	type MaxLength = ConstU32<32>;
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl pallet_nicks::Config for Runtime {
+	type Currency = Balances;
+	type ReservationFee = ConstU128<100>;
+	type Slashed = ();
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MinLength = ConstU32<8>;
+	type MaxLength = ConstU32<32>;
+	type RuntimeEvent = RuntimeEvent;
+}
+
 parameter_types! {
 	pub FeeMultiplier: Multiplier = Multiplier::one();
 }
@@ -292,10 +315,12 @@ construct_runtime!(
 		Aura: pallet_aura,
 		Grandpa: pallet_grandpa,
 		Balances: pallet_balances,
+		Nicks: pallet_nicks,
 		TransactionPayment: pallet_transaction_payment,
 		Sudo: pallet_sudo,
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template,
+		Memes: pallet_memes
 	}
 );
 
